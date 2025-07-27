@@ -51,7 +51,7 @@ app.use((req, res, next) => {
 // CORS Middleware
 const allowedOrigins = [
 	"http://localhost:5173",
-	"https://pnpplxprssv1.vercel.app/",
+	"https://pnpplxprssv1.vercel.app",
 ];
 
 app.use(
