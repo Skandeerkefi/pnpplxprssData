@@ -13,6 +13,7 @@ const fetch = (...args) =>
 
 const app = express();
 const PORT = 3000;
+
 // Schedule job to run every minute
 cron.schedule("* * * * *", async () => {
 	console.log("Running giveaway auto-draw job...");
@@ -32,6 +33,7 @@ cron.schedule("* * * * *", async () => {
 		console.error("Error during auto draw:", err);
 	}
 });
+
 // Logging Middleware
 app.use((req, res, next) => {
 	console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
@@ -47,14 +49,28 @@ app.use((req, res, next) => {
 });
 
 // CORS Middleware
+const allowedOrigins = [
+	"http://localhost:5173",
+	"https://5-moking-leaderboard.vercel.app",
+];
+
 app.use(
 	cors({
-		origin: "http://localhost:5173",
+		origin: function (origin, callback) {
+			// allow requests with no origin like curl or Postman
+			if (!origin) return callback(null, true);
+			if (allowedOrigins.includes(origin)) {
+				return callback(null, true);
+			} else {
+				return callback(new Error("CORS policy: This origin is not allowed"));
+			}
+		},
 		methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
 		allowedHeaders: ["Content-Type", "Authorization"],
 		credentials: true,
 	})
 );
+
 app.use(express.json());
 
 // MongoDB Connection
@@ -136,8 +152,10 @@ app.get("/api/affiliates", async (req, res) => {
 		res.status(500).json({ error: "Failed to fetch affiliates data" });
 	}
 });
+
 const gwsRoutes = require("./routes/gwsRoutes");
 app.use("/api/gws", gwsRoutes);
+
 // Start Server
 app.listen(PORT, () =>
 	console.log(`✅ Server is running at http://localhost:${PORT}`)
