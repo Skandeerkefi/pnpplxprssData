@@ -91,17 +91,19 @@ const slotCallRoutes = require("./routes/slotCallRoutes");
 
 // Auth Routes
 app.post("/api/auth/register", async (req, res) => {
-	const { kickUsername, password, confirmPassword } = req.body;
+	const { kickUsername, rainbetUsername, password, confirmPassword } = req.body;
+
 	if (password !== confirmPassword) {
 		return res.status(400).json({ message: "Passwords do not match." });
 	}
 
 	const existing = await User.findOne({ kickUsername });
-	if (existing)
+	const existingRainbet = await User.findOne({ rainbetUsername });
+	if (existing || existingRainbet)
 		return res.status(400).json({ message: "Username already exists." });
 
 	const hashed = await bcrypt.hash(password, 10);
-	const newUser = new User({ kickUsername, password: hashed });
+	const newUser = new User({ kickUsername, rainbetUsername, password: hashed });
 	await newUser.save();
 
 	res.status(201).json({ message: "User registered." });
