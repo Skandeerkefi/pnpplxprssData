@@ -1,17 +1,15 @@
 const { SlotCall } = require("../models/SlotCall");
 
 exports.createSlotCall = async (req, res) => {
-	const { name, betAmount } = req.body;
-
-	if (!name || !betAmount) {
-		return res.status(400).json({ message: "Missing fields." });
+	const { name } = req.body;
+	if (!name) {
+		return res.status(400).json({ message: "Slot name is required." });
 	}
 
 	try {
 		const slotCall = new SlotCall({
 			user: req.user.id,
 			name,
-			betAmount,
 		});
 		await slotCall.save();
 		res.status(201).json({ message: "Slot call submitted", slotCall });
@@ -43,7 +41,7 @@ exports.getUserSlotCalls = async (req, res) => {
 };
 
 exports.changeSlotCallStatus = async (req, res) => {
-	const { status } = req.body;
+	const { status, x250Hit } = req.body;
 	const { id } = req.params;
 
 	if (!["accepted", "rejected"].includes(status)) {
@@ -53,7 +51,7 @@ exports.changeSlotCallStatus = async (req, res) => {
 	try {
 		const updated = await SlotCall.findByIdAndUpdate(
 			id,
-			{ status },
+			{ status, x250Hit: !!x250Hit },
 			{ new: true }
 		).populate("user", "kickUsername");
 
@@ -63,5 +61,41 @@ exports.changeSlotCallStatus = async (req, res) => {
 		res.status(200).json({ message: `Slot call ${status}`, slotCall: updated });
 	} catch (err) {
 		res.status(500).json({ message: "Update failed" });
+	}
+};
+
+exports.addBonusCall = async (req, res) => {
+	const { id } = req.params;
+	const { name } = req.body;
+
+	if (!name) {
+		return res.status(400).json({ message: "Bonus slot name required." });
+	}
+
+	try {
+		const slotCall = await SlotCall.findById(id);
+
+		if (!slotCall) {
+			return res.status(404).json({ message: "Slot call not found." });
+		}
+
+		if (!slotCall.x250Hit) {
+			return res
+				.status(403)
+				.json({ message: "User is not eligible for a bonus call." });
+		}
+
+		if (slotCall.bonusCall) {
+			return res
+				.status(409)
+				.json({ message: "Bonus call already submitted for this slot." });
+		}
+
+		slotCall.bonusCall = { name };
+		await slotCall.save();
+
+		res.status(200).json({ message: "Bonus call added.", slotCall });
+	} catch (err) {
+		res.status(500).json({ message: "Failed to add bonus call." });
 	}
 };
