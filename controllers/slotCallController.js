@@ -44,7 +44,7 @@ exports.changeSlotCallStatus = async (req, res) => {
 	const { status, x250Hit } = req.body;
 	const { id } = req.params;
 
-	if (!["accepted", "rejected"].includes(status)) {
+	if (!["accepted", "rejected", "played"].includes(status)) {
 		return res.status(400).json({ message: "Invalid status." });
 	}
 

@@ -10,7 +10,7 @@ const slotCallSchema = new mongoose.Schema({
 	name: { type: String, required: true },
 	status: {
 		type: String,
-		enum: ["pending", "accepted", "rejected"],
+		enum: ["pending", "accepted", "rejected", "played"],
 		default: "pending",
 	},
 	x250Hit: { type: Boolean, default: false },
