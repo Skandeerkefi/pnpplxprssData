@@ -1,5 +1,7 @@
 const express = require("express");
 const router = express.Router();
+const { SlotCall } = require("../models/SlotCall"); // make sure this is imported
+
 const {
 	createSlotCall,
 	getAllSlotCalls,
@@ -15,8 +17,9 @@ router.get("/", verifyToken, isAdmin, getAllSlotCalls);
 router.get("/my", verifyToken, getUserSlotCalls);
 router.post("/:id/status", verifyToken, isAdmin, changeSlotCallStatus);
 router.post("/:id/bonus-call", verifyToken, addBonusCall); // Only if x250 is true
+
 // Delete slot call by ID - only admin
-router.delete("/:id", verifyToken, verifyAdmin, async (req, res) => {
+router.delete("/:id", verifyToken, isAdmin, async (req, res) => {
 	try {
 		const slotCallId = req.params.id;
 		const deleted = await SlotCall.findByIdAndDelete(slotCallId);
@@ -31,4 +34,5 @@ router.delete("/:id", verifyToken, verifyAdmin, async (req, res) => {
 		res.status(500).json({ message: "Server error while deleting slot call" });
 	}
 });
+
 module.exports = router;
