@@ -52,6 +52,7 @@ app.use((req, res, next) => {
 const allowedOrigins = [
 	"http://localhost:5173",
 	"https://pnpplxprssv1.vercel.app",
+	"https://pnpplxprss.vercel.app",
 ];
 
 app.use(
