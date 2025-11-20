@@ -14,6 +14,36 @@ exports.createGWS = async (req, res) => {
 		res.status(500).json({ error: "Create GWS failed" });
 	}
 };
+async function getUserWager(rainbetUsername) {
+	try {
+		// Determine current leaderboard range
+		const now = new Date();
+		const cycleStart = new Date(now);
+		cycleStart.setUTCDate(cycleStart.getUTCDate() - (cycleStart.getUTCDate() % 10));
+		cycleStart.setUTCHours(0, 0, 0, 0);
+
+		const cycleEnd = new Date(cycleStart);
+		cycleEnd.setUTCDate(cycleStart.getUTCDate() + 10);
+		cycleEnd.setUTCHours(23, 59, 59, 999);
+
+		const url = `https://services.rainbet.com/v1/external/affiliates?start_at=${cycleStart.toISOString()}&end_at=${cycleEnd.toISOString()}&key=${process.env.RAINBET_API_KEY}`;
+
+		const response = await fetch(url);
+		const data = await response.json();
+
+		if (!Array.isArray(data.data)) return 0;
+
+		// Find the user's stats inside the affiliate array  
+		const userEntry = data.data.find(
+			(entry) => entry.username === rainbetUsername
+		);
+
+		return userEntry ? userEntry.wagered || 0 : 0;
+	} catch (err) {
+		console.error("Error fetching wager:", err);
+		return 0;
+	}
+}
 
 exports.joinGWS = async (req, res) => {
 	try {
@@ -22,6 +52,15 @@ exports.joinGWS = async (req, res) => {
 			return res
 				.status(400)
 				.json({ message: "Rainbet username is required to join GWs." });
+		}
+
+		// ✅ Fetch Wager from Rainbet for current leaderboard cycle
+		const wager = await getUserWager(user.rainbetUsername);
+
+		if (wager < 25) {
+			return res.status(400).json({
+				message: `You must wager at least $25 to join this giveaway. Current wager: $${wager}`,
+			});
 		}
 
 		const gws = await GWS.findById(req.params.id);
@@ -112,3 +151,6 @@ exports.drawWinnerAuto = async (gws) => {
 	gws.state = "complete";
 	await gws.save();
 };
+
+
+
