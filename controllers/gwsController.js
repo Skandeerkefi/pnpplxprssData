@@ -3,6 +3,62 @@ const { User } = require("../models/User");
 const fetch = (...args) =>
 	import("node-fetch").then(({ default: fetch }) => fetch(...args));
 
+/*
+|--------------------------------------------------------------------------
+| BI-WEEKLY LEADERBOARD PERIOD CALCULATION
+| Starts EXACTLY at 7:00 PM EST (00:00 UTC the next day)
+| Repeats every 14 days forever
+|--------------------------------------------------------------------------
+*/
+function getBiweeklyCycle() {
+	// First known cycle (your example)
+	// 11/22/2025 @ 7:00 PM EST  =  11/23/2025 @ 00:00 UTC
+	const firstCycleStart = new Date("2025-11-23T00:00:00Z");
+
+	const now = new Date();
+
+	const cycleMs = 14 * 24 * 60 * 60 * 1000; // 14 days in ms
+
+	// How many cycles have passed since the first cycle
+	const cyclesPassed = Math.floor((now - firstCycleStart) / cycleMs);
+
+	// Current bi-weekly cycle range
+	const cycleStart = new Date(firstCycleStart.getTime() + cyclesPassed * cycleMs);
+	const cycleEnd = new Date(cycleStart.getTime() + cycleMs);
+
+	return { cycleStart, cycleEnd };
+}
+
+/*
+|--------------------------------------------------------------------------
+| Fetch User Wager for Current Bi-Weekly Cycle
+|--------------------------------------------------------------------------
+*/
+async function getUserWager(rainbetUsername) {
+	try {
+		const { cycleStart, cycleEnd } = getBiweeklyCycle();
+
+		const url = `https://services.rainbet.com/v1/external/affiliates?start_at=${cycleStart.toISOString()}&end_at=${cycleEnd.toISOString()}&key=${process.env.RAINBET_API_KEY}`;
+
+		const response = await fetch(url);
+		const data = await response.json();
+
+		if (!Array.isArray(data.data)) return 0;
+
+		const userEntry = data.data.find(entry => entry.username === rainbetUsername);
+
+		return userEntry ? userEntry.wagered || 0 : 0;
+	} catch (err) {
+		console.error("Error fetching wager:", err);
+		return 0;
+	}
+}
+
+/*
+|--------------------------------------------------------------------------
+| CREATE GWS
+|--------------------------------------------------------------------------
+*/
 exports.createGWS = async (req, res) => {
 	const { title, endTime } = req.body;
 
@@ -14,37 +70,12 @@ exports.createGWS = async (req, res) => {
 		res.status(500).json({ error: "Create GWS failed" });
 	}
 };
-async function getUserWager(rainbetUsername) {
-	try {
-		// Determine current leaderboard range
-		const now = new Date();
-		const cycleStart = new Date(now);
-		cycleStart.setUTCDate(cycleStart.getUTCDate() - (cycleStart.getUTCDate() % 10));
-		cycleStart.setUTCHours(0, 0, 0, 0);
 
-		const cycleEnd = new Date(cycleStart);
-		cycleEnd.setUTCDate(cycleStart.getUTCDate() + 10);
-		cycleEnd.setUTCHours(23, 59, 59, 999);
-
-		const url = `https://services.rainbet.com/v1/external/affiliates?start_at=${cycleStart.toISOString()}&end_at=${cycleEnd.toISOString()}&key=${process.env.RAINBET_API_KEY}`;
-
-		const response = await fetch(url);
-		const data = await response.json();
-
-		if (!Array.isArray(data.data)) return 0;
-
-		// Find the user's stats inside the affiliate array  
-		const userEntry = data.data.find(
-			(entry) => entry.username === rainbetUsername
-		);
-
-		return userEntry ? userEntry.wagered || 0 : 0;
-	} catch (err) {
-		console.error("Error fetching wager:", err);
-		return 0;
-	}
-}
-
+/*
+|--------------------------------------------------------------------------
+| JOIN GWS
+|--------------------------------------------------------------------------
+*/
 exports.joinGWS = async (req, res) => {
 	try {
 		const user = await User.findById(req.user.id);
@@ -54,7 +85,7 @@ exports.joinGWS = async (req, res) => {
 				.json({ message: "Rainbet username is required to join GWs." });
 		}
 
-		// ✅ Fetch Wager from Rainbet for current leaderboard cycle
+		// Get user wager for the BI-WEEKLY leaderboard period
 		const wager = await getUserWager(user.rainbetUsername);
 
 		if (wager < 25) {
@@ -82,6 +113,11 @@ exports.joinGWS = async (req, res) => {
 	}
 };
 
+/*
+|--------------------------------------------------------------------------
+| UPDATE GWS
+|--------------------------------------------------------------------------
+*/
 exports.updateGWS = async (req, res) => {
 	const { winnerId, state } = req.body;
 
@@ -99,6 +135,11 @@ exports.updateGWS = async (req, res) => {
 	}
 };
 
+/*
+|--------------------------------------------------------------------------
+| DRAW WINNER
+|--------------------------------------------------------------------------
+*/
 exports.drawWinner = async (req, res) => {
 	try {
 		const gws = await GWS.findById(req.params.id).populate("participants");
@@ -124,6 +165,11 @@ exports.drawWinner = async (req, res) => {
 	}
 };
 
+/*
+|--------------------------------------------------------------------------
+| GET ALL GIVEAWAYS
+|--------------------------------------------------------------------------
+*/
 exports.getAllGWS = async (req, res) => {
 	try {
 		const giveaways = await GWS.find()
@@ -136,7 +182,11 @@ exports.getAllGWS = async (req, res) => {
 	}
 };
 
-// Helper to auto-draw winner and update state
+/*
+|--------------------------------------------------------------------------
+| AUTO DRAW (if needed)
+|--------------------------------------------------------------------------
+*/
 exports.drawWinnerAuto = async (gws) => {
 	if (!gws.participants || gws.participants.length === 0) {
 		gws.state = "complete";
@@ -151,6 +201,3 @@ exports.drawWinnerAuto = async (gws) => {
 	gws.state = "complete";
 	await gws.save();
 };
-
-
-
