@@ -13,7 +13,7 @@ const fetch = (...args) =>
 
 const app = express();
 const PORT = 3000;
-
+const testWagerRoutes = require("./routes/gwsRoutes");
 // Schedule job to run every minute
 cron.schedule("* * * * *", async () => {
 	console.log("Running giveaway auto-draw job...");
@@ -54,7 +54,7 @@ const allowedOrigins = [
 	"https://pnpplxprssv1.vercel.app",
 	"https://pnpplxprss.vercel.app",
 ];
-
+app.use("/api", testWagerRoutes);
 app.use(
 	cors({
 		origin: function (origin, callback) {
@@ -154,10 +154,6 @@ app.get("/api/affiliates", async (req, res) => {
 	} catch (error) {
 		res.status(500).json({ error: "Failed to fetch affiliates data" });
 	}
-});
-app.get("/api/test-wager/:username", async (req, res) => {
-	const wager = await getUserWager(req.params.username);
-	res.json({ username: req.params.username, wager });
 });
 
 const gwsRoutes = require("./routes/gwsRoutes");
