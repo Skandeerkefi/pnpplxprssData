@@ -47,16 +47,17 @@ exports.joinGWS = async (req, res) => {
 		}
 
 		const isEligible = data.affiliates.some((entry) => {
-			return (
-				entry.username?.toLowerCase() === user.rainbetUsername.toLowerCase() &&
-				parseFloat(entry.wagered_amount || "24") > 24
-			);
-		});
+    return (
+        entry.username?.toLowerCase() === user.rainbetUsername.toLowerCase() &&
+        parseFloat(entry.wagered_amount || "0") > 25 // changed from 24 to 25
+    );
+});
+
 
 		if (!isEligible) {
 			return res.status(403).json({
 				message:
-					"You must appear in the current biweekly leaderboard (by wagering on Rainbet) to enter this giveaway.",
+					"You must wager 25$ in the current biweekly leaderboard (by wagering on Rainbet) to enter this giveaway.",
 			});
 		}
 	} catch (error) {
