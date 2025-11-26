@@ -41,18 +41,30 @@ async function getUserWager(rainbetUsername) {
 		const url = `https://services.rainbet.com/v1/external/affiliates?start_at=${cycleStart.toISOString()}&end_at=${cycleEnd.toISOString()}&key=${process.env.RAINBET_API_KEY}`;
 
 		const response = await fetch(url);
-		const data = await response.json();
+		const dataJson = await response.json();
 
-		if (!Array.isArray(data.data)) return 0;
+		if (!dataJson.success || !Array.isArray(dataJson.data)) {
+			console.log("API returned unexpected data:", dataJson);
+			return 0;
+		}
 
-		const userEntry = data.data.find(entry => entry.username === rainbetUsername);
+		const userEntry = dataJson.data.find(
+			entry => entry.username === rainbetUsername || entry.rainbetUsername === rainbetUsername
+		);
 
-		return userEntry ? userEntry.wagered || 0 : 0;
+		if (!userEntry) {
+			console.log(`User ${rainbetUsername} not found in API data`);
+			return 0;
+		}
+
+		console.log(`User ${rainbetUsername} wagered:`, userEntry.wagered || 0);
+		return userEntry.wagered || 0;
 	} catch (err) {
 		console.error("Error fetching wager:", err);
 		return 0;
 	}
 }
+
 
 /*
 |--------------------------------------------------------------------------
