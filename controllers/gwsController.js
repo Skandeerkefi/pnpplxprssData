@@ -196,4 +196,13 @@ exports.drawWinnerAuto = async (gws) => {
   await gws.save();
 };
 
-module.exports.getUserWager = getUserWager;
+module.exports = {
+  createGWS,
+  joinGWS,
+  updateGWS,
+  drawWinner,
+  getAllGWS,
+  drawWinnerAuto,
+  getUserWager  // ✅ export it here
+};
+
