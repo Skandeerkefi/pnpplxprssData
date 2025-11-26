@@ -49,7 +49,7 @@ exports.joinGWS = async (req, res) => {
 		const isEligible = data.affiliates.some((entry) => {
 			return (
 				entry.username?.toLowerCase() === user.rainbetUsername.toLowerCase() &&
-				parseFloat(entry.wagered_amount || "0") > 0
+				parseFloat(entry.wagered_amount || "24") > 24
 			);
 		});
 
