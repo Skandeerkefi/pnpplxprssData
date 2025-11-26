@@ -155,6 +155,10 @@ app.get("/api/affiliates", async (req, res) => {
 		res.status(500).json({ error: "Failed to fetch affiliates data" });
 	}
 });
+app.get("/api/test-wager/:username", async (req, res) => {
+	const wager = await getUserWager(req.params.username);
+	res.json({ username: req.params.username, wager });
+});
 
 const gwsRoutes = require("./routes/gwsRoutes");
 app.use("/api/gws", gwsRoutes);
