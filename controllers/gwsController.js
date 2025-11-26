@@ -24,7 +24,7 @@ exports.joinGWS = async (req, res) => {
 
 	// ✅ Calculate current biweekly range (starting from 2025-07-20)
 	const now = new Date();
-	const firstStart = new Date("2025-07-20T00:00:00Z");
+	const firstStart = new Date("2025-11-22T00:00:00Z");
 	const daysSinceStart = Math.floor((now - firstStart) / (1000 * 60 * 60 * 24));
 	const cycle = Math.floor(daysSinceStart / 14);
 	const startDate = new Date(firstStart);
