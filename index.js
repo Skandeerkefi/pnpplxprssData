@@ -13,7 +13,7 @@ const fetch = (...args) =>
 
 const app = express();
 const PORT = 3000;
-const testWagerRoutes = require("./routes/gwsRoutes");
+
 // Schedule job to run every minute
 cron.schedule("* * * * *", async () => {
 	console.log("Running giveaway auto-draw job...");
@@ -54,7 +54,7 @@ const allowedOrigins = [
 	"https://pnpplxprssv1.vercel.app",
 	"https://pnpplxprss.vercel.app",
 ];
-app.use("/api", testWagerRoutes);
+
 app.use(
 	cors({
 		origin: function (origin, callback) {
