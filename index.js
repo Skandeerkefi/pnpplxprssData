@@ -53,6 +53,8 @@ const allowedOrigins = [
 	"http://localhost:5173",
 	"https://pnpplxprssv1.vercel.app",
 	"https://pnpplxprss.vercel.app",
+	"https://www.pnpplrewards.com",
+	"http://www.pnpplrewards.com"
 ];
 
 app.use(
